@@ -6,6 +6,13 @@ import binascii
 import datetime
 import json
 import logging
+import requests
+from bs4 import BeautifulSoup
+import time
+import aiohttp
+
+
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,6 +26,16 @@ class APSystemsECUR:
     def __init__(self, ipaddr, port=8899, raw_ecu=None, raw_inverter=None):
         self.ipaddr = ipaddr
         self.port = port
+
+# cache data for minimizing ecu querying
+        self.url_old_power_graph = "http://" + ipaddr + "/index.php/realtimedata/old_power_graph"
+        self.url_realtimedata="http://" + ipaddr + "/index.php/realtimedata"
+        self.grid = {}
+        self.ecu_last_tcp_query_date  = 0
+        self.inverters = {}
+        self.data = {}
+        self.queried_tcp = False
+        self.timestamp = 0
 
         # what do we expect socket data to end in
         self.recv_suffix = b'END\n'
@@ -47,15 +64,15 @@ class APSystemsECUR:
 
         self.inverter_byte_start = 26
 
-        self.ecu_id = None
-        self.qty_of_inverters = 0
+        self.ecu_id = None #static
+        self.qty_of_inverters = 0  #static
         self.qty_of_online_inverters = 0
         self.lifetime_energy = 0
         self.current_power = 0
         self.today_energy = 0
         self.inverters = {}
-        self.firmware = None
-        self.timezone = None
+        self.firmware = None #static
+        self.timezone = None #static
         self.last_update = None
         self.vsl = 0
         self.tsl = 0
@@ -187,7 +204,140 @@ class APSystemsECUR:
 
 
         return(data)
- 
+
+
+    async def getHTTPData(self, url ,data):
+
+        async with aiohttp.ClientSession() as session:
+            try:
+                headers = {'content-type': 'text/html; charset=UTF-8'}
+                async with session.post(url, data = data,headers =headers) as resp:
+                    response=await resp.text()
+                    if resp.status not in [200]:
+                        raise Exception ('Error accessing url %s . status %d' %(url,resp.status) )
+            except:
+                raise
+            finally:
+                await session.close()
+        return response, resp
+
+    async def http_query_ecu(self):
+
+        self.grid = {}
+        ts=time.time() #epoch
+        ts_sec=int(ts)
+        ts_ymd=time.strftime('%Y-%m-%d',time.localtime(ts))
+        ts_ymdhms=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(ts))
+
+#get ecu basics (ecu_id for example)
+        #if self.ecu_last_tcp_query_date != ts_ymd:
+        if self.queried_tcp == False or self.ecu_id is None: #first query
+            #print(f'First ecu query this day. Each day get basic info through TCP today ({ts_ymd}). last query date ({self.ecu_last_tcp_query_date})')
+            #Gather all static info from ECU: general info, inverter info
+            self.data=await self.async_query_ecu()
+            self.queried_tcp = True
+            self.ecu_last_tcp_query_date = ts_ymd #mark as queried
+#get daily production from webAPI
+        postdata='date=' + ts_ymd #query today. resp=headers, response=content
+        response , resp= await self.getHTTPData(self.url_old_power_graph, postdata)
+        if resp.status not in [200]:
+           raise Exception ('Error accessing url %s . status %d' %(self.url_old_power_graph,resp.status_status) )
+
+#parse page result
+        rdict=json.loads(response) #convert response to dictionary
+        if len(rdict['power']) == 0: #queried too early. No data yet for this date
+            current_power = 0
+            last_time_update = 0
+            self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) #use current time
+
+        else:
+            last_time_update = int(rdict['power'][-1]['time']/1000) #last update (epoch in millisec)
+            current_power = rdict['power'][-1]['each_system_power']
+            self.timestamp = ts_ymdhms
+            if ts_sec-last_time_update > 360: #no new updates after 6 minute interval assume 0
+                current_power = 0
+
+        self.today_energy = float(rdict['today_energy'])
+        self.current_power = current_power
+
+        #scrape inverter data from internal webpage
+        response , resp= await self.getHTTPData(self.url_realtimedata, '')
+        self.parseTable(response,'table table-condensed table-bordered')
+
+        self.grid['timestamp'] = self.timestamp
+        self.grid['runtime_ts'] = ts_ymdhms
+        self.grid['inverter_qty'] = self.qty_of_inverters
+        #self.grid['inverter_qty_online'] = inverter_qty_online
+        self.grid['inverters'] = self.inverters
+
+        self.grid["ecu_id"] = self.ecu_id
+        self.grid["today_energy"] = self.today_energy
+        self.grid["lifetime_energy"] = self.lifetime_energy
+        self.grid["current_power"] = self.current_power
+
+        return self.grid
+
+    def parseTable(self,page,tableID):
+
+        self.inverters={}
+        current_inverter_id=0
+        inverter_qty_online=0
+        soup = BeautifulSoup(page, 'html.parser')
+        table = soup.find('table', class_=tableID)
+        #<th scope="col">Inverter ID</th>
+        #<th scope="col">Current Power</th>
+        #<th scope="col">DC Voltage</th>
+        #<th scope="col">Grid Frequency</th>
+        #<th scope="col">Grid Voltage</th>
+        #<th scope="col">Temperature</th>
+        #<th scope="col">Reporting Time</th>
+        for row in table.tbody.find_all('tr'):    
+        # Find all data for each column
+            columns = row.find_all('td')
+            num_col=len(columns)
+            if (columns != []):
+                inverter_id,channel_id = columns[0].text.strip().split('-')
+                if num_col == 7:
+                    self.timestamp= columns[6].text.strip()
+                    if inverter_id != current_inverter_id:
+                        current_inverter_id = inverter_id
+                        power=[]
+                        dc_voltage=[]
+                        grid_voltage=[]
+                        channels=[]
+                        self.inverters[inverter_id] = ({'uid' :inverter_id })
+                        if columns[3].text.strip() == '-': #inverter offline (no power generated)
+                            self.inverters[inverter_id].update({'online' : False})
+                            self.inverters[inverter_id].update({'unknown' : '02'})
+                            self.inverters[inverter_id].update({'frequency' : 0.0})
+                            self.inverters[inverter_id].update({'temperature' : -100}) #from tcp results when offline
+                        else:
+                            inverter_qty_online+=1
+                            self.inverters[inverter_id].update({'online' : True})
+                            self.inverters[inverter_id].update({'unknown' : '02'})
+                            self.inverters[inverter_id].update({'frequency' : float(columns[3].text.strip().split(' ')[0])} )
+                            self.inverters[inverter_id].update({'temperature' :int(columns[5].text.strip().split(' ')[0])} )
+                            gvolt=columns[4].text.strip()
+                            if len(gvolt) > 5: grid_voltage.append(int(gvolt.split(' ')[1])) #grid voltage (1 or 3 phase)
+                else:
+                    gvolt=columns[3].text.strip()
+                    if len(gvolt) > 5: grid_voltage.append(int(gvolt.split(' ')[1])) #grid voltage (1 or 3 phase)
+                if self.inverters[inverter_id]['online']:
+                    power.append(int(columns[1].text.strip().split(' ')[0])) #current_power per channel
+                    dc_voltage.append(int(columns[2].text.strip().split(' ')[0])) #dc voltage per channe
+                else:
+                    power.append(0)
+                    dc_voltage.append(0)
+                    grid_voltage.append(0)
+                channels.append(channel_id)
+                self.inverters[inverter_id].update({'signal' : self.data['inverters'][inverter_id]['signal']})
+                self.inverters[inverter_id].update({'model' : self.data['inverters'][inverter_id]['model'] })
+                self.inverters[inverter_id].update({'channel_qty' : len(channels)})
+                self.inverters[inverter_id].update({'power' : power}) #total=current_power
+                self.inverters[inverter_id].update({'voltage' : grid_voltage})
+                #self.inverters[inverter_id].update({'dc_voltage' : dc_voltage})
+                #self.inverters[inverter_id].update({'channels' : channels}) 
+
     def aps_int(self, codec, start):
         try:
             return int(binascii.b2a_hex(codec[(start):(start+2)]), 16)
