@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <!-- 兼容IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- 支持国产浏览器高速模式 -->
+    <meta name="renderer" content="webkit">
+    <!-- 响应式布局 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">   
+
+    <title>Altenergy Power Control Software</title>
+    <link type="image/x-icon" href="http://192.168.4.6/resources/images/favicon.ico" rel="shortcut icon">    
+    <link href="http://192.168.4.6/resources/css/bootstrap.min.css" rel="stylesheet">
+    <link href="http://192.168.4.6/resources/css/ecu-style.css" rel="stylesheet">
+    <link href="http://192.168.4.6/resources/css/bootstrapValidator.css" rel="stylesheet">    
+    <!--[if lt IE 8]>
+      <link href="http://192.168.4.6/resources/css/bootstrap-ie7.css" rel="stylesheet">
+    <![endif]-->
+    
+    <script src="http://192.168.4.6/resources/js/jquery-1.8.2.min.js"></script>
+    <script src="http://192.168.4.6/resources/js/bootstrap.min.js"></script>
+    <script src="http://192.168.4.6/resources/js/bootstrapValidator.min.js"></script>
+    <script src="http://192.168.4.6/resources/js/zDrag.js"></script>
+    <script src="http://192.168.4.6/resources/js/zDialog.js"></script>    
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn"t work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+      <script src="js/respond.min.js"></script>
+    <![endif]-->    
+  </head>
+
+  <body>
+    <!-- 顶部导航栏 -->
+    <header>
+      <div class="navbar navbar-default navbar-top">
+        <div class="container">
+          <div class="navbar-header">
+            <button class="navbar-toggle" data-target="#navbar-header" data-toggle="collapse" type="button">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="http://www.altenergy-power.com">
+              <img src="http://192.168.4.6/resources/images/logo.png">
+            </a>
+          </div>
+          <div class="navbar-collapse collapse" id="navbar-header">
+            <ul class="nav navbar-nav navbar-title">
+              <li><a id="ecu_title">ENERGY COMMUNICATION UNIT</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+              <a class="btn chlang" id="english" >English</a>|
+              <a class="btn chlang" id="chinese" >Chinese</a>
+            </ul>
+          </div>
+        </div>
+      </div>     
+    </header>
+<!-- 菜单导航栏 -->
+<nav>
+    <div class="navbar navbar-default navbar-menu">
+        <div class="container">
+                    <p class="navbar-menu-title">Real Time Data</p>     
+            <div class="navbar-header">            
+                <button class="navbar-toggle" data-target="#navbar-menu" data-toggle="collapse" type="button">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                                    </button>
+            </div>
+            
+            <div class="navbar-collapse collapse" id="navbar-menu">
+                <ul class="nav navbar-nav ">
+                    <li><a href="http://192.168.4.6/index.php/home">Home</a></li>
+                    <li><a href="http://192.168.4.6/index.php/realtimedata" class="active">Real Time Data</a><span> </span></li>                    
+                    <li><a href="http://192.168.4.6/index.php/management">Administration</a><span> </span></li>
+                  
+                  <!-- 
+                    <li><a href="http://192.168.4.6/index.php/meter/meter_power_graph">Advanced</a><span> </span></li>
+                  --> 
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+        
+<section>
+    <div class="container container-main">
+        <!-- 侧边导航栏 -->
+        <aside class="col-md-3 col-md-push-9">
+            <div class="list-group">
+                  
+                              			   
+                   <a href="http://192.168.4.6/index.php/realtimedata" class="list-group-item active">Real Time Data</a>
+                  	   
+                  
+                              			   
+                   <a href="http://192.168.4.6/index.php/realtimedata/power_graph" class="list-group-item ">Power</a>
+                  	   
+                  
+                              			   
+                   <a href="http://192.168.4.6/index.php/realtimedata/energy_graph" class="list-group-item ">Energy</a>
+                  	   
+                                            </div>
+        </aside>
+        
+        <!-- 正文 -->
+        <article class="col-md-9 col-md-pull-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Real Time Data                                        <d class="btn-group pull-right visible-xs">
+                        <button type="button" class="btn btn-info btn-xs dropdown-toggle" data-toggle="dropdown">More <span class="caret"></span></button>
+                        <ul class="dropdown-menu" role="menu">
+                                   
+                                                                   <a href="http://192.168.4.6/index.php/realtimedata" class="list-group-item active">Real Time Data</a>
+                                
+                                   
+                                                                   <a href="http://192.168.4.6/index.php/realtimedata/power_graph" class="list-group-item ">Power</a>
+                                
+                                   
+                                                                   <a href="http://192.168.4.6/index.php/realtimedata/energy_graph" class="list-group-item ">Energy</a>
+                                
+                               
+                        </ul>
+                    </div>
+                                    </div>
+                                
+                <div class="panel-body">
+<!-- 设置结果显示框 -->
+<div class="alert alert-success" id="result"></div>
+<div class="btn-group col-sm-12" >
+	
+		
+			
+			<button title="Note: When working in service mode, the data refreshing will be quick, convinient for service at site, and the data will NOT be sent to EMA at this mode, after 30 minutes, service mode will quit automatically." class=" btn btn-primary" type="button" onclick="change_polling(1)" >Working In Normal Mode,Press To Enter Service Mode</button>			
+	
+</div>
+<br>
+<div id="note" hidden="hidden">Note: When working in service mode, the data refreshing will be quick, convinient for service at site, and the data will NOT be sent to EMA at this mode, after 30 minutes, service mode will quit automatically.</div>
+
+<div class="table-responsive">
+  <table class="table table-condensed table-bordered">
+    <thead>
+      <tr>
+        <th scope="col">Inverter ID</th>
+        <th scope="col">Current Power</th>
+        <th scope="col">DC Voltage</th>
+        <th scope="col">Grid Frequency</th>
+        <th scope="col">Grid Voltage</th>
+        <th scope="col">Temperature</th>
+        <th scope="col">Reporting Time</th>
+      </tr>
+    </thead>
+    <tbody>
+        <div>
+            <tr class='active'>
+        <td>502000026756-1 </td>
+        <td> 187 W </td>
+        <td> 36 V </td>
+        <td rowspan=4 style='vertical-align: middle;'> 50.0 Hz </td>
+        <td> A: 231 V </td>
+        <td rowspan=4 style='vertical-align: middle;'> 24 &#176;C </td>
+        <td rowspan=4 style='vertical-align: middle;'> 2022-02-19 10:35:56
+ </td>
+      </tr>
+            <tr class='active'>
+        <td>502000026756-2 </td>
+        <td> 186 W </td>
+        <td> 36 V </td>
+        <td> B: 233 V </td>
+      </tr>
+            <tr class='active'>
+        <td>502000026756-3 </td>
+        <td> 184 W </td>
+        <td> 36 V </td>
+        <td> C: 230 V </td>
+      </tr>
+            <tr class='active'>
+        <td>502000026756-4 </td>
+        <td> 128 W </td>
+        <td> 36 V </td>
+        <td>- </td>
+      </tr>
+          </div>
+        <div>
+            <tr >
+        <td>502000026705-1 </td>
+        <td> 45 W </td>
+        <td> 32 V </td>
+        <td rowspan=4 style='vertical-align: middle;'> 50.0 Hz </td>
+        <td> A: 230 V </td>
+        <td rowspan=4 style='vertical-align: middle;'> 11 &#176;C </td>
+        <td rowspan=4 style='vertical-align: middle;'> 2022-02-19 10:35:56
+ </td>
+      </tr>
+            <tr >
+        <td>502000026705-2 </td>
+        <td> 42 W </td>
+        <td> 32 V </td>
+        <td> B: 230 V </td>
+      </tr>
+            <tr >
+        <td>502000026705-3 </td>
+        <td> 45 W </td>
+        <td> 32 V </td>
+        <td> C: 227 V </td>
+      </tr>
+            <tr >
+        <td>502000026705-4 </td>
+        <td> 44 W </td>
+        <td> 32 V </td>
+        <td>- </td>
+      </tr>
+          </div>
+        <div>
+            <tr class='active'>
+        <td>502000025906-1 </td>
+        <td> 45 W </td>
+        <td> 36 V </td>
+        <td rowspan=4 style='vertical-align: middle;'> 50.0 Hz </td>
+        <td> A: 231 V </td>
+        <td rowspan=4 style='vertical-align: middle;'> 11 &#176;C </td>
+        <td rowspan=4 style='vertical-align: middle;'> 2022-02-19 10:35:56
+ </td>
+      </tr>
+            <tr class='active'>
+        <td>502000025906-2 </td>
+        <td> 45 W </td>
+        <td> 36 V </td>
+        <td> B: 231 V </td>
+      </tr>
+            <tr class='active'>
+        <td>502000025906-3 </td>
+        <td> 45 W </td>
+        <td> 36 V </td>
+        <td> C: 228 V </td>
+      </tr>
+            <tr class='active'>
+        <td>502000025906-4 </td>
+        <td> 45 W </td>
+        <td> 36 V </td>
+        <td>- </td>
+      </tr>
+          </div>
+        </tbody>
+  </table>
+</div>
+
+<script>
+ 
+
+function change_polling(polling_value){
+// 	if(document.getElementById("poll").checked)
+// 	{
+// 		console.log("checked");
+// 		polling_value = 1;
+// 	}
+// 	else
+// 	{
+// 		console.log("no checked");
+// 		polling_value = 0;
+// 	}
+    $.ajax({
+        url : "http://192.168.4.6/index.php/management/set_polling_conf",
+        type : "post",
+            dataType : "json",
+        data: "polling_value="+polling_value,
+        success : function(Results){
+              $("#result").text(Results.message);
+                if(Results.value == 0){
+                    $("#result").removeClass().addClass("alert alert-success");
+                    setTimeout('$("#result").fadeToggle("slow")', 3000);
+                }
+                else{
+                    $("#result").removeClass().addClass("alert alert-warning");
+                }
+                $("#result").fadeToggle("slow");
+                window.scrollTo(0,0);//页面置顶 
+                location.reload();//刷新页面
+            },
+            error : function() { alert("Error"); }
+        })
+}
+</script>
+            </div>
+          </div>
+    	</article>
+      </div>
+    </section>
+    <footer class="footer">&copy; 2015 Altenergy Power System Inc.</footer>
+    <script>
+        /* 指定5分钟刷新一次 */
+        function myrefresh() {
+            window.location.reload();
+        }
+        setTimeout('myrefresh()',300000); 
+         	
+    /* 切换语言 */
+        $(".chlang").click(function(){
+            $.ajax({
+                url : "http://192.168.4.6/index.php/management/set_language",
+                type : "post",
+                dataType : "json",
+                data: "language=" + $(this).attr("id"),
+            })
+            setTimeout("location.reload();",500);//刷新页面
+        });
+    </script>
+    </body>
+</html>
