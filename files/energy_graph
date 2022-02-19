@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <!-- 兼容IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- 支持国产浏览器高速模式 -->
+    <meta name="renderer" content="webkit">
+    <!-- 响应式布局 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">   
+
+    <title>Altenergy Power Control Software</title>
+    <link type="image/x-icon" href="http://192.168.4.6/resources/images/favicon.ico" rel="shortcut icon">    
+    <link href="http://192.168.4.6/resources/css/bootstrap.min.css" rel="stylesheet">
+    <link href="http://192.168.4.6/resources/css/ecu-style.css" rel="stylesheet">
+    <link href="http://192.168.4.6/resources/css/bootstrapValidator.css" rel="stylesheet">    
+    <!--[if lt IE 8]>
+      <link href="http://192.168.4.6/resources/css/bootstrap-ie7.css" rel="stylesheet">
+    <![endif]-->
+    
+    <script src="http://192.168.4.6/resources/js/jquery-1.8.2.min.js"></script>
+    <script src="http://192.168.4.6/resources/js/bootstrap.min.js"></script>
+    <script src="http://192.168.4.6/resources/js/bootstrapValidator.min.js"></script>
+    <script src="http://192.168.4.6/resources/js/zDrag.js"></script>
+    <script src="http://192.168.4.6/resources/js/zDialog.js"></script>    
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn"t work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+      <script src="js/respond.min.js"></script>
+    <![endif]-->    
+  </head>
+
+  <body>
+    <!-- 顶部导航栏 -->
+    <header>
+      <div class="navbar navbar-default navbar-top">
+        <div class="container">
+          <div class="navbar-header">
+            <button class="navbar-toggle" data-target="#navbar-header" data-toggle="collapse" type="button">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="http://www.altenergy-power.com">
+              <img src="http://192.168.4.6/resources/images/logo.png">
+            </a>
+          </div>
+          <div class="navbar-collapse collapse" id="navbar-header">
+            <ul class="nav navbar-nav navbar-title">
+              <li><a id="ecu_title">ENERGY COMMUNICATION UNIT</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+              <a class="btn chlang" id="english" >English</a>|
+              <a class="btn chlang" id="chinese" >Chinese</a>
+            </ul>
+          </div>
+        </div>
+      </div>     
+    </header>
+<!-- 菜单导航栏 -->
+<nav>
+    <div class="navbar navbar-default navbar-menu">
+        <div class="container">
+                    <p class="navbar-menu-title">Real Time Data</p>     
+            <div class="navbar-header">            
+                <button class="navbar-toggle" data-target="#navbar-menu" data-toggle="collapse" type="button">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                                    </button>
+            </div>
+            
+            <div class="navbar-collapse collapse" id="navbar-menu">
+                <ul class="nav navbar-nav ">
+                    <li><a href="http://192.168.4.6/index.php/home">Home</a></li>
+                    <li><a href="http://192.168.4.6/index.php/realtimedata" class="active">Real Time Data</a><span> </span></li>                    
+                    <li><a href="http://192.168.4.6/index.php/management">Administration</a><span> </span></li>
+                  
+                  <!-- 
+                    <li><a href="http://192.168.4.6/index.php/meter/meter_power_graph">Advanced</a><span> </span></li>
+                  --> 
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+        
+<section>
+    <div class="container container-main">
+        <!-- 侧边导航栏 -->
+        <aside class="col-md-3 col-md-push-9">
+            <div class="list-group">
+                  
+                              			   
+                   <a href="http://192.168.4.6/index.php/realtimedata" class="list-group-item ">Real Time Data</a>
+                  	   
+                  
+                              			   
+                   <a href="http://192.168.4.6/index.php/realtimedata/power_graph" class="list-group-item ">Power</a>
+                  	   
+                  
+                              			   
+                   <a href="http://192.168.4.6/index.php/realtimedata/energy_graph" class="list-group-item active">Energy</a>
+                  	   
+                                            </div>
+        </aside>
+        
+        <!-- 正文 -->
+        <article class="col-md-9 col-md-pull-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Energy                                        <d class="btn-group pull-right visible-xs">
+                        <button type="button" class="btn btn-info btn-xs dropdown-toggle" data-toggle="dropdown">More <span class="caret"></span></button>
+                        <ul class="dropdown-menu" role="menu">
+                                   
+                                                                   <a href="http://192.168.4.6/index.php/realtimedata" class="list-group-item ">Real Time Data</a>
+                                
+                                   
+                                                                   <a href="http://192.168.4.6/index.php/realtimedata/power_graph" class="list-group-item ">Power</a>
+                                
+                                   
+                                                                   <a href="http://192.168.4.6/index.php/realtimedata/energy_graph" class="list-group-item active">Energy</a>
+                                
+                               
+                        </ul>
+                    </div>
+                                    </div>
+                                
+                <div class="panel-body">
+<form class="form-horizontal" >
+    <div class="col-sm-6 col-sm-offset-3">
+        <div class="input-group input-group-sm">
+            <span class="input-group-addon" id="show_period" style="background-color:transparent;">Current Week</span>
+            <input class="form-control datepicker" type="text" name="date" value="2022-02-19" onClick="WdatePicker({maxDate:'%y-%M-%d', lang:'en', onpicked:select_date})" readonly>
+            <div class="input-group-btn">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Query <span class="caret"></span></button>
+                <ul class="dropdown-menu dropdown-menu-right">
+                    <li><a href="javascript:select_period('weekly')">Current Week</a></li>
+                    <li><a href="javascript:select_period('monthly')">Current Month</a></li>
+                    <li><a href="javascript:select_period('yearly')">Current Year</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- 显示图表 -->
+<div class="col-sm-12 mychart">
+    <div id="myChart"></div>
+</div>
+
+<!-- 总能量 -->
+<h4><span class="label label-warning pull-right" id="total">Solar Generated Current Week: 27.3 kWh</span></h4>
+
+
+<script src="http://192.168.4.6/resources/js/datepicker/WdatePicker.js"></script>
+<script src="http://192.168.4.6/resources/js/highcharts.js"></script>
+<script src="http://192.168.4.6/resources/js/modules/exporting.js"></script>
+<script>
+//window.scrollTo(0,110);//页面位置调整（显示完整图表）
+$(document).ready(function(){
+    Highcharts.setOptions({
+        global: { //全局配置
+            useUTC: false 
+        },
+        lang: {
+        	contextButtonTitle: "Chart context menu",
+        	downloadJPEG: "Download JPEG image",
+            downloadPDF: "Download PDF document",
+            downloadPNG: "Download PNG image",
+            downloadSVG: "Download SVG vector image",
+            printChart:" Print chart",
+        },
+        chart: { //图表通用参数设置
+        	type: 'column',
+            backgroundColor: 'rgba(255,255,255,0)', //设置透明背景
+            //height: 400, //图表高度(默认是400px)
+            //zoomType: 'x', //可沿着X轴放大
+            spacing: [10, 10, 5, 0], //上右下左[外边框和绘图区之间的距离]
+        },
+        title: {
+            text: 'Power Generation Statistics'
+        },
+        subtitle: { //副标题设置
+            y: 200,
+            style: {
+                fontSize: "16px",
+            }
+        },
+        xAxis: {
+            labels: {
+                maxStaggerLines: 1, //横坐标只显示一行
+            },            
+        },
+        yAxis: { //Y坐标轴设置
+        	//gridLineDashStyle: 'longdash', //设置网格线样式
+            title: {
+            	text: 'Energy (kWh)',
+                style: {
+                    fontSize: "16px",
+                },
+                //align: 'high', offset: -45, rotation: 0, y: -15
+            },
+            min:0,
+        },
+        tooltip: { //数据点提示框设置
+        	borderWidth: 0,
+            snap: 0,
+            hideDelay:0, //提示框隐藏延时为0
+            valueSuffix: ' kWh',
+        },
+        legend: { //图例说明
+            enabled: false,
+        },
+        credits: { //图表版权信息
+            enabled: false
+        },
+        plotOptions: { //数据点配置     
+        },        
+    });
+
+    /* 创建图表 */
+    $('#myChart').highcharts({
+        subtitle: {
+        	text: '',
+        },
+        xAxis: {
+            categories: ["02/13","02/14","02/15","02/16","02/17","02/18","02/19",],
+        },
+        series: [{
+            name: 'Energy',
+            data: [5.35,5.28,4.88,1.79,6.24,2.52,1.24,],
+        }]
+    });
+});
+var data_period = 'weekly'; //默认查询一周
+function select_period(period)
+{
+	if(period == 'yearly'){
+	    $("#show_period").html("Current Year");
+	}
+	else if(period == 'monthly'){
+	    $("#show_period").html("Current Month");
+	}
+	else{
+		$("#show_period").html("Current Week");
+	}
+	data_period = period;
+    show_graph();
+}
+function select_date()
+{
+	$(".datepicker").blur();
+	show_graph();
+}
+function show_graph()
+{
+	$.ajax({
+		url : "http://192.168.4.6/index.php/realtimedata/old_energy_graph",
+		type : "post",
+        dataType : "json",
+        data: "date=" + $(".datepicker").val() 
+          + "&period=" + data_period,
+        success : function(Results){
+            //整理数据
+        	var data_date = new Array();
+        	var data_energy = new Array();
+        	$.each(Results.energy,function(key,value){   
+        		data_date.push(value.date);
+        		data_energy.push(value.energy);
+     		});
+     		//重新绘制图表
+            if(data_period == 'yearly'){ //最近一年
+                $('#myChart').highcharts({
+                    subtitle: {
+                    	text: Results.subtitle
+                    },
+                    xAxis: {
+                        categories: data_date
+                    },
+                    series: [{
+                        name: 'Energy',
+                        data: data_energy,
+                    }]
+                });
+                $('#total').text("Solar Generated Current Year: " + Results.total_energy + " kWh");
+            }
+            else if(data_period == 'monthly'){
+            	$('#myChart').highcharts({
+                    subtitle: {
+                    	text: Results.subtitle
+                    },
+                    xAxis: {
+                        categories: data_date,
+                        labels: {
+                            step: 2,
+                            rotation: -45
+                        }
+                    },
+                    series: [{
+                        name: 'Energy',
+                        data: data_energy,
+                    }]
+                });
+                $('#total').text("Solar Generated Current Month: " + Results.total_energy + " kWh");
+            }
+            else{
+            	$('#myChart').highcharts({
+                    subtitle: {
+                    	text: Results.subtitle
+                    },
+                    xAxis: {
+                        categories: data_date
+                    },
+                    series: [{
+                        name: 'Energy',
+                        data: data_energy,
+                    }]
+                });
+            	$('#total').text("Solar Generated Current Week: " + Results.total_energy + " kWh");
+            }
+        },
+        error : function() { alert("Error"); }
+    })
+}
+</script>            </div>
+          </div>
+    	</article>
+      </div>
+    </section>
+    <footer class="footer">&copy; 2015 Altenergy Power System Inc.</footer>
+    <script>
+        /* 指定5分钟刷新一次 */
+        function myrefresh() {
+            window.location.reload();
+        }
+        setTimeout('myrefresh()',300000); 
+         	
+    /* 切换语言 */
+        $(".chlang").click(function(){
+            $.ajax({
+                url : "http://192.168.4.6/index.php/management/set_language",
+                type : "post",
+                dataType : "json",
+                data: "language=" + $(this).attr("id"),
+            })
+            setTimeout("location.reload();",500);//刷新页面
+        });
+    </script>
+    </body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <!-- 兼容IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- 支持国产浏览器高速模式 -->
+    <meta name="renderer" content="webkit">
+    <!-- 响应式布局 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">   
+
+    <title>Altenergy Power Control Software</title>
+    <link type="image/x-icon" href="http://192.168.4.6/resources/images/favicon.ico" rel="shortcut icon">    
+    <link href="http://192.168.4.6/resources/css/bootstrap.min.css" rel="stylesheet">
+    <link href="http://192.168.4.6/resources/css/ecu-style.css" rel="stylesheet">
+    <link href="http://192.168.4.6/resources/css/bootstrapValidator.css" rel="stylesheet">    
+    <!--[if lt IE 8]>
+      <link href="http://192.168.4.6/resources/css/bootstrap-ie7.css" rel="stylesheet">
+    <![endif]-->
+    
+    <script src="http://192.168.4.6/resources/js/jquery-1.8.2.min.js"></script>
+    <script src="http://192.168.4.6/resources/js/bootstrap.min.js"></script>
+    <script src="http://192.168.4.6/resources/js/bootstrapValidator.min.js"></script>
+    <script src="http://192.168.4.6/resources/js/zDrag.js"></script>
+    <script src="http://192.168.4.6/resources/js/zDialog.js"></script>    
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn"t work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="js/html5shiv.min.js"></script>
+      <script src="js/respond.min.js"></script>
+    <![endif]-->    
+  </head>
+
+  <body>
+    <!-- 顶部导航栏 -->
+    <header>
+      <div class="navbar navbar-default navbar-top">
+        <div class="container">
+          <div class="navbar-header">
+            <button class="navbar-toggle" data-target="#navbar-header" data-toggle="collapse" type="button">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="http://www.altenergy-power.com">
+              <img src="http://192.168.4.6/resources/images/logo.png">
+            </a>
+          </div>
+          <div class="navbar-collapse collapse" id="navbar-header">
+            <ul class="nav navbar-nav navbar-title">
+              <li><a id="ecu_title">ENERGY COMMUNICATION UNIT</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+              <a class="btn chlang" id="english" >English</a>|
+              <a class="btn chlang" id="chinese" >Chinese</a>
+            </ul>
+          </div>
+        </div>
+      </div>     
+    </header>
+<!-- 菜单导航栏 -->
+<nav>
+    <div class="navbar navbar-default navbar-menu">
+        <div class="container">
+                    <p class="navbar-menu-title">Real Time Data</p>     
+            <div class="navbar-header">            
+                <button class="navbar-toggle" data-target="#navbar-menu" data-toggle="collapse" type="button">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                                    </button>
+            </div>
+            
+            <div class="navbar-collapse collapse" id="navbar-menu">
+                <ul class="nav navbar-nav ">
+                    <li><a href="http://192.168.4.6/index.php/home">Home</a></li>
+                    <li><a href="http://192.168.4.6/index.php/realtimedata" class="active">Real Time Data</a><span> </span></li>                    
+                    <li><a href="http://192.168.4.6/index.php/management">Administration</a><span> </span></li>
+                  
+                  <!-- 
+                    <li><a href="http://192.168.4.6/index.php/meter/meter_power_graph">Advanced</a><span> </span></li>
+                  --> 
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+        
+<section>
+    <div class="container container-main">
+        <!-- 侧边导航栏 -->
+        <aside class="col-md-3 col-md-push-9">
+            <div class="list-group">
+                  
+                              			   
+                   <a href="http://192.168.4.6/index.php/realtimedata" class="list-group-item ">Real Time Data</a>
+                  	   
+                  
+                              			   
+                   <a href="http://192.168.4.6/index.php/realtimedata/power_graph" class="list-group-item active">Power</a>
+                  	   
+                  
+                              			   
+                   <a href="http://192.168.4.6/index.php/realtimedata/energy_graph" class="list-group-item ">Energy</a>
+                  	   
+                                            </div>
+        </aside>
+        
+        <!-- 正文 -->
+        <article class="col-md-9 col-md-pull-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    Power                                        <d class="btn-group pull-right visible-xs">
+                        <button type="button" class="btn btn-info btn-xs dropdown-toggle" data-toggle="dropdown">More <span class="caret"></span></button>
+                        <ul class="dropdown-menu" role="menu">
+                                   
+                                                                   <a href="http://192.168.4.6/index.php/realtimedata" class="list-group-item ">Real Time Data</a>
+                                
+                                   
+                                                                   <a href="http://192.168.4.6/index.php/realtimedata/power_graph" class="list-group-item active">Power</a>
+                                
+                                   
+                                                                   <a href="http://192.168.4.6/index.php/realtimedata/energy_graph" class="list-group-item ">Energy</a>
+                                
+                               
+                        </ul>
+                    </div>
+                                    </div>
+                                
+                <div class="panel-body">
+<form class="form-horizontal">
+  <div class="col-sm-4 col-sm-offset-4">
+    <div class="input-group input-group-sm">
+        <input class="form-control datepicker" type="text" name="date" value="2022-02-19" onClick="WdatePicker({maxDate:'%y-%M-%d', lang:'en', onpicked:select_date})" readonly>
+        <span class="input-group-btn">
+            <button class="btn btn-default" id="query" type="button">Query</button>
+        </span>
+    </div>
+  </div>
+</form>
+
+<!-- 显示图表 -->
+<div class="col-sm-12 mychart">
+    <div id="myChart"></div>
+</div>
+
+<!-- 总能量 -->
+<h4><span class="label label-warning pull-right" id="total">Solar Generated Today: 1.24 kWh</span></h4>
+
+
+<script src="http://192.168.4.6/resources/js/datepicker/WdatePicker.js"></script>
+<script src="http://192.168.4.6/resources/js/highcharts.js"></script>
+<script src="http://192.168.4.6/resources/js/modules/exporting.js"></script>
+<script>
+//window.scrollTo(0,110);//页面位置调整（显示完整图表）
+$(document).ready(function() {
+    Highcharts.setOptions({
+        global: { //全局配置
+            useUTC: false 
+        },
+        lang: {
+        	contextButtonTitle: "Chart context menu",
+        	downloadJPEG: "Download JPEG image",
+            downloadPDF: "Download PDF document",
+            downloadPNG: "Download PNG image",
+            downloadSVG: "Download SVG vector image",
+            printChart:" Print chart",
+        },
+        chart: { //图表通用参数设置
+            defaultSeriesType: 'spline', //绘制圆滑的曲线
+            backgroundColor: 'rgba(255,255,255,0)', //设置透明背景
+            //height: 400, //图表高度(默认是400px)
+            //zoomType: 'x', //可沿着X轴放大
+            spacing: [10, 10, 5, 0], //上右下左[外边框和绘图区之间的距离]
+            //margin:[10, 10, 25, 70],//上右下左 
+        },
+        title: {
+            text: 'Trend of System Power '
+        },
+        subtitle: { //副标题设置
+            y: 200,
+            style: {
+                fontSize: "16px",
+            }
+        },
+        xAxis: { //X坐标轴设置
+            type: 'datetime',
+        },
+        yAxis: { //Y坐标轴设置
+            title: {
+            	//enabled: false,
+            	text: 'Power (W)',
+                style: {
+                    fontSize: "16px",
+                }
+            },
+            min:0,
+        },
+        tooltip: { //数据点提示框设置
+        	borderWidth: 0,
+            crosshairs: true,
+            //shared: true,
+            snap: 0,
+            hideDelay:0, //提示框隐藏延时为0
+            valueSuffix: ' W',
+        },
+        legend: { //图例说明
+            enabled: false,
+//             borderColor: '#DDDDDD',
+//             borderWidth: 1,
+//             borderRadius: 6,
+//             itemStyle: {
+//                 fontWeight: 'slin'
+//             }
+        },
+        credits: { //图表版权信息
+            enabled: false
+        },
+        plotOptions: { //数据点配置
+        	series: {
+        		//shadow: true, //显示曲线阴影
+                marker: {
+                    enabled: false,
+                    fillColor: '#FFFFFF',
+                    radius: 2,
+                    lineWidth: 1,
+                    lineColor: null                    
+                },
+                states: {
+                	hover: {
+                    	halo:{
+                    	    size: 0 //不显示数据点边缘阴影
+                   	    }
+                    }
+            	},
+            },           
+        },        
+    });
+        
+    /* 创建图表 */
+    $('#myChart').highcharts({
+        subtitle: { //副标题设置
+        	text: '',
+        },
+        series:[{
+            name: 'Power',    
+            data: [[1645252856000,24],[1645253156000,16],[1645253456000,20],[1645253756000,24],[1645254056000,20],[1645254356000,15],[1645254656000,24],[1645254956000,51],[1645255256000,64],[1645255556000,62],[1645255856000,63],[1645256156000,102],[1645256456000,87],[1645256756000,86],[1645257056000,87],[1645257356000,104],[1645257656000,167],[1645257956000,198],[1645258256000,248],[1645258556000,289],[1645258856000,428],[1645259156000,287],[1645259456000,249],[1645259756000,324],[1645260056000,531],[1645260356000,758],[1645260656000,875],[1645260956000,614],[1645261256000,922],[1645261556000,887],[1645261856000,979],[1645262156000,637],[1645262456000,693],[1645262756000,671],[1645263056000,749],[1645263356000,1041],[1645263656000,1037],[1645263956000,936],[1645264256000,1126],]
+        }]
+    });
+    $("#query").click(function(){
+    	show_graph();
+    });
+});
+function select_date()
+{
+	$(".datepicker").blur();
+	show_graph();
+}
+function show_graph()
+{
+	$.ajax({
+		url : "http://192.168.4.6/index.php/realtimedata/old_power_graph",
+		type : "post",
+        dataType : "json",
+        data: "date=" + $(".datepicker").val(),
+        success : function(Results){
+            //整理数据
+        	var data_power = new Array();     	
+        	$.each(Results.power,function(key,value){   
+        		data_power.push([value.time,value.each_system_power]);
+     		});     		
+     		//重新绘制图表
+            $('#myChart').highcharts({
+                subtitle: {
+                	text: Results.subtitle
+                },
+                series:[{
+                    name: 'Power',    
+                    data: data_power
+                }]
+            });
+            //显示发电量
+            $('#total').text("Solar Generated Today: " + Results.today_energy + " kWh");
+        },
+        error : function() { alert("Error"); }
+    })
+}
+</script>            </div>
+          </div>
+    	</article>
+      </div>
+    </section>
+    <footer class="footer">&copy; 2015 Altenergy Power System Inc.</footer>
+    <script>
+        /* 指定5分钟刷新一次 */
+        function myrefresh() {
+            window.location.reload();
+        }
+        setTimeout('myrefresh()',300000); 
+         	
+    /* 切换语言 */
+        $(".chlang").click(function(){
+            $.ajax({
+                url : "http://192.168.4.6/index.php/management/set_language",
+                type : "post",
+                dataType : "json",
+                data: "language=" + $(this).attr("id"),
+            })
+            setTimeout("location.reload();",500);//刷新页面
+        });
+    </script>
+    </body>
+</html>
