@@ -11,8 +11,6 @@ import time
 import aiohttp
 import numpy
 
-
-
 _LOGGER = logging.getLogger(__name__)
 
 from pprint import pprint
@@ -26,7 +24,7 @@ class APSystemsECUR:
         self.ipaddr = ipaddr
         self.port = port
 
-# cache data for minimizing ecu querying
+        #http_query variables...
         self.url_prefix= "http://" + ipaddr + "/index.php"
         self.url_old_power_graph = self.url_prefix + "/realtimedata/old_power_graph"
         self.url_old_energy_graph = self.url_prefix + "/realtimedata/old_energy_graph"
@@ -35,9 +33,24 @@ class APSystemsECUR:
         self.grid = {}
         self.ecu_last_query_date  = 0
         self.inverters = {}
-        self.data = {}
         self.queried_static_info = False
         self.timestamp = 0
+        self.ts = None
+        self.ts_ymd = None
+        self.ecu_id = None #static
+        self.qty_of_inverters = 0  #static
+        self.inverter_qty_online = 0
+        self.lifetime_energy = 0 #kwh
+        self.current_power = 0 #W
+        self.peak_power = 0 #W
+        self.median_power = 0 #kwh
+        self.median_power = 0 #kwh
+        self.today_energy = 0 #kwh
+        self.week_mean_power = 0 #kwh
+        self.week_median_power = 0 #kwh
+        self.week_mean_power = 0 #kwh
+        self.page = None # for debugging puposes
+
 
         # what do we expect socket data to end in
         self.recv_suffix = b'END\n'
@@ -66,26 +79,13 @@ class APSystemsECUR:
 
         self.inverter_byte_start = 26
 
-        self.ecu_id = None #static
-        self.qty_of_inverters = 0  #static
         self.qty_of_online_inverters = 0
-        self.lifetime_energy = 0 #kwh
-        self.current_power = 0 #W
-        self.peak_power = 0 #W
-        self.median_power = 0 #kwh
-        self.median_power = 0 #kwh
-        self.today_energy = 0 #kwh
-        self.week_mean_power = 0 #kwh
-        self.week_median_power = 0 #kwh
-        self.week_mean_power = 0 #kwh
-        self.inverters = {}
-        self.firmware = None #static
-        self.timezone = None #static
         self.last_update = None
+        self.firmware = None
+        self.timezone = None
+
         self.vsl = 0
         self.tsl = 0
-
-        self.page = None # for debugging puposes
 
         self.ecu_raw_data = raw_ecu
         self.inverter_raw_data = raw_inverter
@@ -215,7 +215,7 @@ class APSystemsECUR:
 
         return(data)
 
-
+    #http IO
     async def getHTTPData(self, url ,data):
 
         async with aiohttp.ClientSession() as session:
@@ -224,7 +224,7 @@ class APSystemsECUR:
                 async with session.post(url, data = data,headers =headers) as resp:
                     response=await resp.text()
                     if resp.status not in [200]:
-                        raise Exception ('Error accessing url %s . status %d' %(url,resp.status) )
+                        raise Exception ('Error accessing url %s . HTTP status code %d' %(url,resp.status) )
             except:
                 raise
             finally:
@@ -234,72 +234,22 @@ class APSystemsECUR:
     async def http_query_ecu(self):
 
         self.grid = {}
-        ts=time.time() #epoch
-        ts_sec=int(ts)
-        ts_ymd=time.strftime('%Y-%m-%d',time.localtime(ts))
-        ts_ymdhms=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(ts))
+        self.ts=time.time() #epoch
+        self.ts_ymd=time.strftime('%Y-%m-%d',time.localtime(self.ts))
 
-        #get ecu basics (liek ecu_id)
+        #get ecu basics (like ecu_id). Only after startup
         if self.queried_static_info == False or self.ecu_id is None: #first query
-            #get ecu_id (via wlan page)
-            response , resp= await self.getHTTPData(self.url_wlan, '')
-            soup = BeautifulSoup(response)
-            TAG = soup.findAll('input',attrs={'name':'SSID'})
-            if TAG is None or len(TAG) == 0:
-                _LOGGER.warning(f"Failed to get data from first query on {self.url_wlan}")
-            else:
-                VALUE_list = TAG[0].attrs['value'].split('_')
-                if VALUE_list[0] == 'ECU':
-                    self.ecu_id = TAG[0].attrs['value'].split('_')[-1]
-                    self.queried_static_info = True
+            await self.getBasicStats()
 
+        #get 5 minute updates
+        await self.getDailyStats()
 
-        #get daily production from webAPI
-        postdata='date=' + ts_ymd #query today. resp=headers, response=content
-        response , resp= await self.getHTTPData(self.url_old_power_graph, postdata)
-        self.page = response
+        #get weekly stats (once per day)
+        if not self.ecu_last_query_date == self.ts_ymd:
+            await self.getWeeklyStats()
 
-        #parse page result
-        rdict=json.loads(response) #convert response to dictionary
-        if len(rdict['power']) == 0: #queried too early. No data yet for this date
-            self.current_power = 0
-            self.peak_power = 0
-            last_time_update = 0
-            self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) #use current time
-        else:
-            last_time_update = int(rdict['power'][-1]['time']/1000) #last update (epoch in millisec)
-            self.current_power = rdict['power'][-1]['each_system_power']
-
-            power_list= [power['each_system_power'] for power in rdict['power']]
-            self.peak_power = numpy.max(power_list)
-            self.median_power = round(numpy.median(power_list)/1000,2)
-            self.mean_power = round(numpy.mean(power_list)/1000,2)
-
-            self.timestamp = ts_ymdhms
-            if ts_sec-last_time_update > 360: #no new updates after 6 minute interval assume 0
-                self.current_power = 0
-        self.today_energy = float(rdict['today_energy'])
-
-        #scrape inverter data from internal webpage
-        response , resp= await self.getHTTPData(self.url_realtimedata, '')
-        self.parseTable(response,'table table-condensed table-bordered')
-
-        #get week stats
-        if not self.ecu_last_query_date == ts_ymd:
-            #new day
-            #get daily production from webAPI
-            postdata='period=weekly'
-            response , resp= await self.getHTTPData(self.url_old_energy_graph, postdata)
-            self.page = response
-            rdict=json.loads(response)
-            energy_list= [energy['energy'] for energy in rdict['energy']]
-            self.week_peak_power = numpy.max(energy_list)
-            self.week_median_power = round(numpy.median(energy_list),2)
-            self.week_mean_power = round(numpy.mean(energy_list),2)
-            self.ecu_last_query_date = ts_ymd
-
+        #build response
         self.grid['timestamp'] = self.timestamp
-        self.grid['runtime_ts'] = ts_ymdhms
         self.grid['inverter_qty'] = self.qty_of_inverters
         self.grid['inverter_qty_online'] = self.inverter_qty_online
         self.grid['inverters'] = self.inverters
@@ -316,6 +266,62 @@ class APSystemsECUR:
         self.grid["current_power"] = self.current_power
 
         return self.grid
+
+    async def getBasicStats(self):
+        #get ecu_id (via wlan page)
+        response , resp= await self.getHTTPData(self.url_wlan, '')
+        soup = BeautifulSoup(response)
+        TAG = soup.findAll('input',attrs={'name':'SSID'})
+        if TAG is None or len(TAG) == 0:
+            _LOGGER.warning(f"Failed to get basic data from query on {self.url_wlan}")
+        else:
+            VALUE_list = TAG[0].attrs['value'].split('_')
+            if VALUE_list[0] == 'ECU':
+                self.ecu_id = TAG[0].attrs['value'].split('_')[-1]
+                self.queried_static_info = True
+
+    async def getDailyStats(self):
+        #get daily production from webAPI
+        postdata='date=' + self.ts_ymd #query today. resp=headers, response=content
+        response , resp= await self.getHTTPData(self.url_old_power_graph, postdata)
+
+        #parse page result
+        rdict=json.loads(response) #convert response to dictionary
+        if len(rdict['power']) == 0: #queried too early. No data yet for this date
+            self.current_power = 0
+            self.peak_power = 0
+            last_time_update = 0
+            self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) #use current time
+            _LOGGER.warning(f"Querying ECU while not producing power.")
+        else:
+            last_time_update = int(rdict['power'][-1]['time']/1000) #last update (epoch in millisec)
+            self.current_power = rdict['power'][-1]['each_system_power']
+
+            power_list= [power['each_system_power'] for power in rdict['power']]
+            self.peak_power = numpy.max(power_list)
+            self.median_power = round(numpy.median(power_list)/1000,2)
+            self.mean_power = round(numpy.mean(power_list)/1000,2)
+
+            self.timestamp = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(self.ts))
+            if int(self.ts)-last_time_update > 360: #no new updates after 6 minute interval assume 0
+                self.current_power = 0
+            self.today_energy = float(rdict['today_energy'])
+        
+        #scrape inverter data from internal webpage
+        response , resp= await self.getHTTPData(self.url_realtimedata, '')
+        self.parseTable(response,'table table-condensed table-bordered')
+
+    async def getWeeklyStats(self):
+        #get daily production from webAPI
+        postdata='period=weekly'
+        response , resp= await self.getHTTPData(self.url_old_energy_graph, postdata)
+        self.page = response
+        rdict=json.loads(response)
+        energy_list= [energy['energy'] for energy in rdict['energy']]
+        self.week_peak_power = numpy.max(energy_list)
+        self.week_median_power = round(numpy.median(energy_list),2)
+        self.week_mean_power = round(numpy.mean(energy_list),2)
+        self.ecu_last_query_date = self.ts_ymd
 
     def parseTable(self,page,tableID):
 
