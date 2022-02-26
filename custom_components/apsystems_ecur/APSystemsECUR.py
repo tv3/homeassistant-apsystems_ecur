@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
 import asyncio
+from re import T
 import socket
 import binascii
-import datetime
 import json
 import logging
-import requests
 from bs4 import BeautifulSoup
 import time
 import aiohttp
-
+import numpy
 
 
 
@@ -28,13 +27,16 @@ class APSystemsECUR:
         self.port = port
 
 # cache data for minimizing ecu querying
-        self.url_old_power_graph = "http://" + ipaddr + "/index.php/realtimedata/old_power_graph"
-        self.url_realtimedata="http://" + ipaddr + "/index.php/realtimedata"
+        self.url_prefix= "http://" + ipaddr + "/index.php"
+        self.url_old_power_graph = self.url_prefix + "/realtimedata/old_power_graph"
+        self.url_old_energy_graph = self.url_prefix + "/realtimedata/old_energy_graph"
+        self.url_realtimedata= self.url_prefix + "/realtimedata"
+        self.url_wlan = self.url_prefix + "/management/wlan" 
         self.grid = {}
-        self.ecu_last_tcp_query_date  = 0
+        self.ecu_last_query_date  = 0
         self.inverters = {}
         self.data = {}
-        self.queried_tcp = False
+        self.queried_static_info = False
         self.timestamp = 0
 
         # what do we expect socket data to end in
@@ -67,15 +69,23 @@ class APSystemsECUR:
         self.ecu_id = None #static
         self.qty_of_inverters = 0  #static
         self.qty_of_online_inverters = 0
-        self.lifetime_energy = 0
-        self.current_power = 0
-        self.today_energy = 0
+        self.lifetime_energy = 0 #kwh
+        self.current_power = 0 #W
+        self.peak_power = 0 #W
+        self.median_power = 0 #kwh
+        self.median_power = 0 #kwh
+        self.today_energy = 0 #kwh
+        self.week_mean_power = 0 #kwh
+        self.week_median_power = 0 #kwh
+        self.week_mean_power = 0 #kwh
         self.inverters = {}
         self.firmware = None #static
         self.timezone = None #static
         self.last_update = None
         self.vsl = 0
         self.tsl = 0
+
+        self.page = None # for debugging puposes
 
         self.ecu_raw_data = raw_ecu
         self.inverter_raw_data = raw_inverter
@@ -229,49 +239,79 @@ class APSystemsECUR:
         ts_ymd=time.strftime('%Y-%m-%d',time.localtime(ts))
         ts_ymdhms=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(ts))
 
-#get ecu basics (ecu_id for example)
-        #if self.ecu_last_tcp_query_date != ts_ymd:
-        if self.queried_tcp == False or self.ecu_id is None: #first query
-            #print(f'First ecu query this day. Each day get basic info through TCP today ({ts_ymd}). last query date ({self.ecu_last_tcp_query_date})')
-            #Gather all static info from ECU: general info, inverter info
-            self.data=await self.async_query_ecu()
-            self.queried_tcp = True
-            self.ecu_last_tcp_query_date = ts_ymd #mark as queried
-#get daily production from webAPI
+        #get ecu basics (liek ecu_id)
+        if self.queried_static_info == False or self.ecu_id is None: #first query
+            #get ecu_id (via wlan page)
+            response , resp= await self.getHTTPData(self.url_wlan, '')
+            soup = BeautifulSoup(response)
+            TAG = soup.findAll('input',attrs={'name':'SSID'})
+            if TAG is None or len(TAG) == 0:
+                _LOGGER.warning(f"Failed to get data from first query on {self.url_wlan}")
+            else:
+                VALUE_list = TAG[0].attrs['value'].split('_')
+                if VALUE_list[0] == 'ECU':
+                    self.ecu_id = TAG[0].attrs['value'].split('_')[-1]
+                    self.queried_static_info = True
+
+
+        #get daily production from webAPI
         postdata='date=' + ts_ymd #query today. resp=headers, response=content
         response , resp= await self.getHTTPData(self.url_old_power_graph, postdata)
-        if resp.status not in [200]:
-           raise Exception ('Error accessing url %s . status %d' %(self.url_old_power_graph,resp.status_status) )
+        self.page = response
 
-#parse page result
+        #parse page result
         rdict=json.loads(response) #convert response to dictionary
         if len(rdict['power']) == 0: #queried too early. No data yet for this date
-            current_power = 0
+            self.current_power = 0
+            self.peak_power = 0
             last_time_update = 0
             self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) #use current time
-
         else:
             last_time_update = int(rdict['power'][-1]['time']/1000) #last update (epoch in millisec)
-            current_power = rdict['power'][-1]['each_system_power']
+            self.current_power = rdict['power'][-1]['each_system_power']
+
+            power_list= [power['each_system_power'] for power in rdict['power']]
+            self.peak_power = numpy.max(power_list)
+            self.median_power = round(numpy.median(power_list)/1000,2)
+            self.mean_power = round(numpy.mean(power_list)/1000,2)
+
             self.timestamp = ts_ymdhms
             if ts_sec-last_time_update > 360: #no new updates after 6 minute interval assume 0
-                current_power = 0
-
+                self.current_power = 0
         self.today_energy = float(rdict['today_energy'])
-        self.current_power = current_power
 
         #scrape inverter data from internal webpage
         response , resp= await self.getHTTPData(self.url_realtimedata, '')
         self.parseTable(response,'table table-condensed table-bordered')
 
+        #get week stats
+        if not self.ecu_last_query_date == ts_ymd:
+            #new day
+            #get daily production from webAPI
+            postdata='period=weekly'
+            response , resp= await self.getHTTPData(self.url_old_energy_graph, postdata)
+            self.page = response
+            rdict=json.loads(response)
+            energy_list= [energy['energy'] for energy in rdict['energy']]
+            self.week_peak_power = numpy.max(energy_list)
+            self.week_median_power = round(numpy.median(energy_list),2)
+            self.week_mean_power = round(numpy.mean(energy_list),2)
+            self.ecu_last_query_date = ts_ymd
+
         self.grid['timestamp'] = self.timestamp
         self.grid['runtime_ts'] = ts_ymdhms
         self.grid['inverter_qty'] = self.qty_of_inverters
-        #self.grid['inverter_qty_online'] = inverter_qty_online
+        self.grid['inverter_qty_online'] = self.inverter_qty_online
         self.grid['inverters'] = self.inverters
 
         self.grid["ecu_id"] = self.ecu_id
         self.grid["today_energy"] = self.today_energy
+        self.grid["peak_power"] = self.peak_power
+        self.grid["median_power"] = self.median_power
+        self.grid["mean_power"] = self.mean_power
+        self.grid["week_peak_power"] = self.week_peak_power
+        self.grid["week_median_power"] = self.week_median_power
+        self.grid["week_mean_power"] = self.week_mean_power
         self.grid["lifetime_energy"] = self.lifetime_energy
         self.grid["current_power"] = self.current_power
 
@@ -281,7 +321,7 @@ class APSystemsECUR:
 
         self.inverters={}
         current_inverter_id=0
-        inverter_qty_online=0
+        self.inverter_qty_online=0
         soup = BeautifulSoup(page, 'html.parser')
         table = soup.find('table', class_=tableID)
         #<th scope="col">Inverter ID</th>
@@ -308,13 +348,11 @@ class APSystemsECUR:
                         self.inverters[inverter_id] = ({'uid' :inverter_id })
                         if columns[3].text.strip() == '-': #inverter offline (no power generated)
                             self.inverters[inverter_id].update({'online' : False})
-                            self.inverters[inverter_id].update({'unknown' : '02'})
                             self.inverters[inverter_id].update({'frequency' : 0.0})
                             self.inverters[inverter_id].update({'temperature' : -100}) #from tcp results when offline
                         else:
-                            inverter_qty_online+=1
+                            self.inverter_qty_online+=1
                             self.inverters[inverter_id].update({'online' : True})
-                            self.inverters[inverter_id].update({'unknown' : '02'})
                             self.inverters[inverter_id].update({'frequency' : float(columns[3].text.strip().split(' ')[0])} )
                             self.inverters[inverter_id].update({'temperature' :int(columns[5].text.strip().split(' ')[0])} )
                             gvolt=columns[4].text.strip()
@@ -330,12 +368,12 @@ class APSystemsECUR:
                     dc_voltage.append(0)
                     grid_voltage.append(0)
                 channels.append(channel_id)
-                self.inverters[inverter_id].update({'signal' : self.data['inverters'][inverter_id]['signal']})
-                self.inverters[inverter_id].update({'model' : self.data['inverters'][inverter_id]['model'] })
+                self.inverters[inverter_id].update({'model' : 'unknown' }) #not known on internal website
+                self.inverters[inverter_id].update({'signal' : 0 }) #not known on internal website
                 self.inverters[inverter_id].update({'channel_qty' : len(channels)})
                 self.inverters[inverter_id].update({'power' : power}) #total=current_power
                 self.inverters[inverter_id].update({'voltage' : grid_voltage})
-                #self.inverters[inverter_id].update({'dc_voltage' : dc_voltage})
+                self.inverters[inverter_id].update({'dc_voltage' : dc_voltage})
                 #self.inverters[inverter_id].update({'channels' : channels}) 
 
     def aps_int(self, codec, start):
