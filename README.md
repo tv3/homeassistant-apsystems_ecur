@@ -1,18 +1,25 @@
-# Home-Assistant APSystems ECU-R and ECU-B Integration
-This is a custom component for [Home-Assistant](http://home-assistant.io) that adds support for the [APsystems](http://www.apsystems.com) ECU-R and ECU-B solar Energy Communication Unit. With this component you are able to monitor your PV installation (inverters) in detail.
+# Home-Assistant APSystems ECU-R(-PRO) Integration
+This is a custom component for [Home-Assistant](http://home-assistant.io) that adds support for the [APsystems](http://www.apsystems.com) ECU-R (PRO) solar Energy Communication Unit. With this component you are able to monitor your PV installation (inverters) in detail.
 
 
 ## Background & acknowledgement
-This integration queries the local ECU-R and ECU-B every 1 minute for new data. This was done without a public API, and by listening to and interpreting the protocol the APSystems ECU phone app (ECUapp) uses when setting up the PV array.
+This integration is based on massive amounts of work done by others people. Initially this integration was based on a TCP based querying mechanism. This proved to be functional for all models, except ECU-R. It would get into an unresponsive state after about three days.
+
+This an adapted version of the original integration querying now the local ECU-R-PRO on its internal webpage through http. This method has proven to be very stable. I have had it running for many weeks.
 
 This couldn't have been done without the hardwork of @checking12 and @HAEdwin on the home assistant forum, and all the other people from this forum (https://gathering.tweakers.net/forum/list_messages/2032302/1)
+Also a shoutout to @ksheumaker for creating the original integration.
 
 ## Prerequisites
-You own an APSystems ECU-R or ECU-B and any combination of YC600, YC1000 or QS1/QS1A inverter.
-This component only works if the ECU-R or ECU-B is attached to your network by Wifi. To enable and configure WiFi on the ECU, use the ECUapp (downloadable via Appstore or Google Play) and temporarily enable the ECU's accesspoint by pressing the button on the side of the ECU. Then connect your phone's WiFi to the ECU's accesspoint to enable the ECUapp to connect and configure the ECU.
-Although there's no need to also attach the ECU-R by ethernet cable (for the ECU-B LAN ports are disabled), you are free to do so if you like.
+You own an APSystems ECU-R and it runs the ECU-R_PRO firmware.
+This component works on both Wifi and Ethernet. To enable and configure WiFi on the ECU, use the ECUapp (downloadable via Appstore or Google Play) and temporarily enable the ECU's accesspoint by pressing the button on the side of the ECU. Then connect your phone's WiFi to the ECU's accesspoint to enable the ECUapp to connect and configure the ECU.
+Although there's no need to also attach the ECU-R by ethernet cable, you are free to do so if you like.
 
 ## Release notes
+
+### v1.1.3
+####still in progress
+Release for ECU-R PRO with HTTP integration. No support for other ECU devices (unless they also have the same internal webpage).
 
 
 ### v1.1.2
@@ -38,7 +45,7 @@ v1.0.8 - fix HA version in hacs.json file
 
 ## Setup
 Option 1:
-Easiest option, install the custom component using HACS by searching for "APSystems ECU-R". If you are unable to find the integration in HACS, select HACS in left pane, select Integrations. In the top pane right from the word Integrations you can find the menu (three dots above eachother). Select Custom Repositories and add the URL: https://github.com/ksheumaker/homeassistant-apsystems_ecur below that select category Integration.
+Easiest option, install the custom component using HACS by searching for "APSystems ECU-R". If you are unable to find the integration in HACS, select HACS in left pane, select Integrations. In the top pane right from the word Integrations you can find the menu (three dots above eachother). Select Custom Repositories and add the URL: https://github.com/tv3/homeassistant-apsystems_ecur below that select category Integration.
 
 Option 2:
 Copy contents of the apsystems_ecur/ directory into your <HA-CONFIG>/custom_components/apsystems_ecur directory (```/config/custom_components``` on hassio)
@@ -56,7 +63,7 @@ Your directory structure should look like this:
 
 ## Configuration
 
-Go to the integrations screen and choose "Add Integration" search for APSystemsECU-R and provide the WIFI IP address, and update interval (60 seconds is the default).
+Go to the integrations screen and choose "Add Integration" search for APSystemsECU-R and provide the WIFI IP address, and update interval (360 seconds is the default).
 
 _Warning_ the ECU device isn't the most powerful querying it more frequently could lead to stability issues with the ECU and require a power cycle.
 
@@ -87,5 +94,4 @@ A new device will be created for each inverter called `Inverter [UID]` where [UI
 
 ## TODO
 1. Code cleanup - it probably needs some work
-2. Add online status of individual inverters
-3. Improve ECU-R-PRO firmware compatibility
+2. decide what to do with TCP code. Not all information is available througg webpages.
