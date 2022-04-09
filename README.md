@@ -1,4 +1,4 @@
-# Home-Assistant APSystems ECU-R(-PRO) Integration
+# Home-Assistant APSystems ECU-R Integration
 This is a custom component for [Home-Assistant](http://home-assistant.io) that adds support for the [APsystems](http://www.apsystems.com) ECU-R (PRO) solar Energy Communication Unit. With this component you are able to monitor your PV installation (inverters) in detail.
 
 
