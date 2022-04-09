@@ -65,6 +65,10 @@ Your directory structure should look like this:
 
 Go to the integrations screen and choose "Add Integration" search for APSystemsECU-R and provide the WIFI IP address, and update interval (360 seconds is the default).
 
+For HTTP use port 80, for TCP use port 8899
+
+The async mode has been tested succesfully for both HTTP and TCP and is the default querytype.
+
 _Warning_ the ECU device isn't the most powerful querying it more frequently could lead to stability issues with the ECU and require a power cycle.
 
 Although you can query the ECU 24/7, it is an option to stop the query after sunset (apsystems_ecur.stop_query) and only start the query again at sunrise (apsystems_ecur.start_query). You can do this by adding automations. 
