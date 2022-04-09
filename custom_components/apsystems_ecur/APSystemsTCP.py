@@ -35,7 +35,7 @@ class APSystemsTCP:
         # how big of a buffer to read at a time from the socket
         self.recv_size = 4096
 
-        self.qs1_ids = [ "802", "801", "804", "806" ]
+        self.qs1_ids = [ "802", "801", "804", "805", "806" ]
         self.yc600_ids = [ "406", "407", "408", "409" ]
         self.yc1000_ids = [ "501", "502", "503", "504" ]
         self.ds3_ids = [ "703", "704" ]
@@ -74,9 +74,9 @@ class APSystemsTCP:
 ## SYNC IO
     def close_socket(self):
         try:
-            self.sock.shutdown(socket.SHUT_RDWR)
-            self.sock.close()
             self.socket_open = False
+            self.sock.shutdown (socket.SHUT_RDWR)
+            self.sock.close ()
         except:
             pass
 
