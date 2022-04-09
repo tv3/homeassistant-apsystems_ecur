@@ -18,20 +18,17 @@ class APSystemsECUR:
         self.ipaddr = ipaddr
         self.port = port
 
-        if port == 8899:
-            _LOGGER.info('Setting up TCP integration based on port number %d' %(port))
-            self.ECU=ETCP.APSystemsTCP(ipaddr,port)
-        else:
+        if port == 80:
             _LOGGER.info('Setting up HTTP integration.')
             self.ECU=EHTTP.APSystemsHTTP(ipaddr,port)
+        else:
+            _LOGGER.info('Setting up TCP integration based on port number %d' %(port))
+            self.ECU=ETCP.APSystemsTCP(ipaddr,port)
 
     async def async_query_ecu(self):
-
-        _LOGGER.info('async query')
         data=await self.ECU.async_query_ecu()
         return(data)
     
     def query_ecu(self):
-        _LOGGER.info('sync_query')
         data=self.ECU.sync_query_ecu()
         return(data)

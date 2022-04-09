@@ -1,17 +1,18 @@
-# Home-Assistant APSystems ECU-R Integration
-This is a custom component for [Home-Assistant](http://home-assistant.io) that adds support for the [APsystems](http://www.apsystems.com) ECU-R (PRO) solar Energy Communication Unit. With this component you are able to monitor your PV installation (inverters) in detail.
+# Home-Assistant APSystems ECU Integration
+This is a custom component for [Home-Assistant](http://home-assistant.io) that adds support for the [APsystems](http://www.apsystems.com) ECU-R (and ECU-B etc) solar Energy Communication Unit. With this component you are able to monitor your PV installation (inverters) in detail.
 
 
 ## Background & acknowledgement
 This integration is based on massive amounts of work done by others people. Initially this integration was based on a TCP based querying mechanism. This proved to be functional for all models, except ECU-R. It would get into an unresponsive state after about three days.
 
-This an adapted version of the original integration querying now the local ECU-R-PRO on its internal webpage through http. This method has proven to be very stable. I have had it running for many weeks.
+This an adapted version of the original integration querying now the local ECU-R on its internal webpage through http. This method has proven to be very stable for me.
+Currently I'm working on splitting the TCP and HTTP methods in separate modules, so they can be maintained independently.
 
-This couldn't have been done without the hardwork of @checking12 and @HAEdwin on the home assistant forum, and all the other people from this forum (https://gathering.tweakers.net/forum/list_messages/2032302/1)
-Also a shoutout to @ksheumaker for creating the original integration.
+This couldn't have been done without @ksheumaker (see [sheumaker/homeassistant-apsystems_ecur](https://github.com/ksheumaker/homeassistant-apsystems_ecur)) who created the integration and the hardwork of @checking12 and @HAEdwin on the home assistant forum, and all the other people from this forum (https://gathering.tweakers.net/forum/list_messages/2032302/1)
+
 
 ## Prerequisites
-You own an APSystems ECU-R and it runs the ECU-R_PRO firmware.
+This integration is primarily for ECU-R running the ECU-R_PRO firmware. The original integration is still there and I will try to keep it in working state.
 This component works on both Wifi and Ethernet. To enable and configure WiFi on the ECU, use the ECUapp (downloadable via Appstore or Google Play) and temporarily enable the ECU's accesspoint by pressing the button on the side of the ECU. Then connect your phone's WiFi to the ECU's accesspoint to enable the ECUapp to connect and configure the ECU.
 Although there's no need to also attach the ECU-R by ethernet cable, you are free to do so if you like.
 
@@ -19,8 +20,7 @@ Although there's no need to also attach the ECU-R by ethernet cable, you are fre
 
 ### v1.1.3
 ####still in progress
-Release for ECU-R PRO with HTTP integration. No support for other ECU devices (unless they also have the same internal webpage).
-
+Release for ECU-R PRO with HTTP integration. 
 
 ### v1.1.2
 Make ECU-C devices behave like ECU_R_PRO devices and close the socket down between each query.  Add support for new ds3 inverter type 704
@@ -94,4 +94,4 @@ A new device will be created for each inverter called `Inverter [UID]` where [UI
 
 ## TODO
 1. Code cleanup - it probably needs some work
-2. decide what to do with TCP code. Not all information is available througg webpages.
+2. decide what to do with TCP code. Not all information is available through webpages.
