@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
 
+# Stripped version of APSystemsECUR.py. Removed TCP references. 
+# Idea: have separate TCP/HTTP modules for querying
+# Problem: needs multiple people as integration works differently with each model
+# Current state: this stripped code could works as a replacement for APSystemsECUR.py, but is now just a separate file
+# TODO: make this work independent of original changes in ksheumaker's repo.
+
 import json
 import logging
 from bs4 import BeautifulSoup
 import time
 import requests
 import numpy
+import aiohttp
+import asyncio
+import nest_asyncio
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +33,10 @@ class APSystemsHTTP:
         self.url_old_energy_graph = self.url_prefix + "/realtimedata/old_energy_graph"
         self.url_realtimedata= self.url_prefix + "/realtimedata"
         self.url_wlan = self.url_prefix + "/management/wlan" 
+
+        self.AIO = False #do async IO?
+        nest_asyncio.apply()
+
         self.grid = {}
         self.ecu_last_query_date  = 0
         self.inverters = {}
@@ -53,9 +66,12 @@ class APSystemsHTTP:
         self.firmware = None
         self.timezone = None
 
+#
+# HTTP IO
+#
 
     #HTTP async IO
-    async def getHTTPData(self, url ,data):
+    async def asyncHTTP(self, url ,data):
 
         async with aiohttp.ClientSession() as session:
             try:
@@ -71,7 +87,7 @@ class APSystemsHTTP:
         return response, resp
 
     #HTTP sync IO
-    def reqHTTPData(self,url,data):
+    def syncHTTP(self,url,data):
         try:
             headers = {'content-type': 'text/html; charset=UTF-8'}
             resp = requests.post(url, data=data, headers=headers, timeout=self.timeout)
@@ -82,8 +98,33 @@ class APSystemsHTTP:
         finally:
             resp.close()
         return resp.text, resp
+#
+# hide async from queries
+#
+    def reqHTTPData(self, url, data):
+        if self.AIO:
+            # encapsulate async task
+            return asyncio.run(self.asyncHTTP(url, data) )
+        else:
+            return self.syncHTTP(url, data)
 
-    def query_ecu(self):
+#
+# query ECU
+#
+
+# interface async/sync
+    async def async_query_ecu(self):
+        self.AIO=True
+        return self.do_query_ecu()
+
+    def sync_query_ecu(self):
+        self.AIO=False
+        return self.do_query_ecu()
+
+#
+# process data
+#
+    def do_query_ecu(self):
 
         self.grid = {}
         self.ts=time.time() #epoch
@@ -119,10 +160,13 @@ class APSystemsHTTP:
 
         return self.grid
 
+#
+# get static data (queried at startup)
+#
     def getBasicStats(self):
         #get ecu_id (via wlan page)
         response , resp = self.reqHTTPData(self.url_wlan, '')
-        soup = BeautifulSoup(response)
+        soup = BeautifulSoup(response, features="html.parser")
         TAG = soup.findAll('input',attrs={'name':'SSID'})
         if TAG is None or len(TAG) == 0:
             _LOGGER.warning(f"Failed to get basic data from query on {self.url_wlan}")
@@ -132,6 +176,9 @@ class APSystemsHTTP:
                 self.ecu_id = TAG[0].attrs['value'].split('_')[-1]
                 self.queried_static_info = True
 
+#
+# get data for the day
+#
     def getDailyStats(self):
         #get daily production from webAPI
         postdata='date=' + self.ts_ymd #query today. resp=headers, response=content
@@ -161,8 +208,11 @@ class APSystemsHTTP:
         
         #scrape inverter data from internal webpage
         response , resp = self.reqHTTPData(self.url_realtimedata, '')
-        self.parseTable(response,'table table-condensed table-bordered')
+        self.parseInverterTable(response,'table table-condensed table-bordered')
 
+#
+# get the week stats
+#
     def getWeeklyStats(self):
         #get daily production from webAPI
         postdata='period=weekly'
@@ -175,13 +225,17 @@ class APSystemsHTTP:
         self.week_mean_power = round(numpy.mean(energy_list),2)
         self.ecu_last_query_date = self.ts_ymd
 
-    def parseTable(self,page,tableID):
+#
+# parse the inverter webpage (url_realtimedata).
+#
+    def parseInverterTable(self,page,tableID):
 
         self.inverters={}
         current_inverter_id=0
         self.inverter_qty_online=0
         soup = BeautifulSoup(page, 'html.parser')
         table = soup.find('table', class_=tableID)
+        # THis is the general column makeup of webpage that we parse here
         #<th scope="col">Inverter ID</th>
         #<th scope="col">Current Power</th>
         #<th scope="col">DC Voltage</th>
@@ -232,4 +286,5 @@ class APSystemsHTTP:
                 self.inverters[inverter_id].update({'power' : power}) #total=current_power
                 self.inverters[inverter_id].update({'voltage' : grid_voltage})
                 self.inverters[inverter_id].update({'dc_voltage' : dc_voltage})
+                self.qty_of_inverters = len(self.inverters) # set number of inverters
                 #self.inverters[inverter_id].update({'channels' : channels}) 
