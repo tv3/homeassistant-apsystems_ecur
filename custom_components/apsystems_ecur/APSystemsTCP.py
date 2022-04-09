@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
 
 import asyncio
-from re import T
 import socket
 import binascii
-import json
 import logging
-from bs4 import BeautifulSoup
-import time
-import aiohttp
-import numpy
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -73,6 +67,58 @@ class APSystemsTCP:
         self.reader = None
         self.writer = None
 
+#
+# TCO/Socket IO
+#
+
+## SYNC IO
+    def close_socket(self):
+        try:
+            self.sock.shutdown(socket.SHUT_RDWR)
+            self.sock.close()
+            self.socket_open = False
+        except:
+            pass
+
+    def open_socket(self):
+        _LOGGER.debug(f"Open socket to ECU on {self.ipaddr} {self.port}")
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(self.timeout)
+        self.sock.connect((self.ipaddr, self.port))
+        self.socket_open = True
+    
+    def read_from_socket(self):
+        self.read_buffer = b''
+        end_data = None
+
+        while end_data != self.recv_suffix:
+            data = self.sock.recv(self.recv_size)
+            if data == b'':
+                break
+            self.read_buffer += data
+            size = len(self.read_buffer)
+            end_data = self.read_buffer[size-4:]
+
+        return self.read_buffer
+
+# open>send>read>close
+    def reqTCPData(self, cmd):
+        _LOGGER.debug(f"Request data from socket for command: {cmd} ")
+        try:
+            self.open_socket()
+            self.sock.sendall(cmd.encode('utf-8'))
+            response = self.read_from_socket()
+            _LOGGER.debug(f"Received data from socket")
+            return response
+        except:
+            msg = "IO Error after querying for ECU data cmd={cmd.rstrip()}. (timeout={self.timeout}s) "
+            self.add_error(msg)
+            raise
+        finally:
+            self.close_socket()
+
+
+## ASYNC IO
     async def async_read_from_socket(self):
         self.read_buffer = b''
         end_data = None
@@ -120,7 +166,7 @@ class APSystemsTCP:
             await self.writer.wait_closed()
 
             raise APSystemsInvalidData(f"ECU returned 0 for lifetime energy, raw data={self.ecu_raw_data}")
-        print(str(self.firmware))
+
         if "ECU_R_PRO" in self.firmware or "ECU-C" in self.firmware:
             self.writer.close()
             await self.writer.wait_closed()
@@ -166,24 +212,15 @@ class APSystemsTCP:
 
     def query_ecu(self):
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.ipaddr,self.port))
-
-        sock.sendall(self.ecu_query.encode('utf-8'))
-        self.ecu_raw_data = sock.recv(self.recv_size)
-
+        cmd = self.ecu_query
+        self.ecu_raw_data = self.reqTCPData(cmd)
         self.process_ecu_data()
 
         cmd = self.inverter_query_prefix + self.ecu_id + self.inverter_query_suffix
-        sock.sendall(cmd.encode('utf-8'))
-        self.inverter_raw_data = sock.recv(self.recv_size)
+        self.inverter_raw_data = self.reqTCPData(cmd)
 
         cmd = self.inverter_signal_prefix + self.ecu_id + self.inverter_signal_suffix
-        sock.sendall(cmd.encode('utf-8'))
-        self.inverter_raw_signal = sock.recv(self.recv_size)
-
-        sock.shutdown(socket.SHUT_RDWR)
-        sock.close()
+        self.inverter_raw_signal = self.reqTCPData(cmd)
 
         data = self.process_inverter_data()
 
