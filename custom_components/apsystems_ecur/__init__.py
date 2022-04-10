@@ -1,7 +1,4 @@
 import logging
-
-import voluptuous as vol
-import traceback
 from datetime import timedelta
 
 from .APSystemsECUR import APSystemsECUR, APSystemsInvalidData
@@ -57,7 +54,7 @@ class ECUR():
 
         return self.cached_data
 
-    async def update(self):
+    def update(self):
         data = {}
 
         # if we aren't actively quering data, pull data form the cache
@@ -74,7 +71,7 @@ class ECUR():
 
         _LOGGER.debug("Querying ECU")
         try:
-            data = await self.ecu.async_query_ecu()
+            data = self.ecu.query_ecu()
             _LOGGER.debug("Got data from ECU")
 
             # we got good results, so we store it and set flags about our

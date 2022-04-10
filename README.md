@@ -20,7 +20,12 @@ Although there's no need to also attach the ECU-R by ethernet cable, you are fre
 
 ### v1.1.3
 ####still in progress
-Release for ECU-R PRO with HTTP integration. 
+- Release for ECU firmware with HTTP integration (ECU-R_PRO). 
+- works with sync, not async
+- can use HTTP and TCP(change port to 8899 in APSystemECUR)
+- added support for QS1 805 type inverter
+- fixed number of inverters in payload fro HTTP
+- defaults to HTTP communication
 
 ### v1.1.2
 Make ECU-C devices behave like ECU_R_PRO devices and close the socket down between each query.  Add support for new ds3 inverter type 704

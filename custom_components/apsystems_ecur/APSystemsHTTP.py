@@ -14,7 +14,6 @@ import requests
 import numpy
 import aiohttp
 import asyncio
-import nest_asyncio
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,7 +34,6 @@ class APSystemsHTTP:
         self.url_wlan = self.url_prefix + "/management/wlan" 
 
         self.AIO = False #do async IO?
-        nest_asyncio.apply()
 
         self.grid = {}
         self.ecu_last_query_date  = 0
