@@ -9,9 +9,6 @@ _LOGGER = logging.getLogger(__name__)
 # This module is used as abstraction of the TCP/HTTP modules, so HA integration points don't change
 #
 
-#import APSystemsHTTP as EHTTP
-#import APSystemsTCP as ETCP
-
 from .APSystemsHTTP import APSystemsHTTP
 from .APSystemsTCP import APSystemsTCP
 
