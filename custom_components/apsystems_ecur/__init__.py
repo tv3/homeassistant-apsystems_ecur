@@ -74,7 +74,7 @@ class ECUR():
 
         _LOGGER.debug("Querying ECU")
         try:
-            data = await self.ecu.async_query_ecu()
+            data = await self.ecu.http_query_ecu()
             _LOGGER.debug("Got data from ECU")
 
             # we got good results, so we store it and set flags about our
