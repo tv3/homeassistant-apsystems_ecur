@@ -73,7 +73,7 @@ These sensors will show up under an `ECU [ID]` device, where [ID] is the unique 
 
 * sensor.ecu_current_power - total amount of power (in W) being generated right now
 * sensor.ecu_today_energy - total amount of energy (in kWh) generated today now
-* sensor.ecu_lifetime_energy - total amount of energy (in kWh) generated from the lifetime of the array
+* sensor.ecu_lifetime_energy - THis sensor is NOT available with the http query function. Use ecu_today_energy! (total amount of energy (in kWh) generated from the lifetime of the array)
 
 ### Inverter Level Sensors
 
