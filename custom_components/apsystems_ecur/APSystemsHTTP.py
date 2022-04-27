@@ -42,7 +42,6 @@ class APSystemsHTTP:
         self.timestamp = 0
         self.ts = None
         self.ts_ymd = None
-        self.ecu_id = None #static
         self.qty_of_inverters = 0  #static
         self.inverter_qty_online = 0
         self.lifetime_energy = 0 #kwh
@@ -63,6 +62,7 @@ class APSystemsHTTP:
         self.last_update = None
         self.firmware = None
         self.timezone = None
+        self.ecu_id = None #static
 
 #
 # HTTP IO
@@ -88,6 +88,7 @@ class APSystemsHTTP:
     def syncHTTP(self,url,data):
         try:
             headers = {'content-type': 'text/html; charset=UTF-8'}
+            resp = None
             resp = requests.post(url, data=data, headers=headers, timeout=self.timeout)
             if not resp.ok:
                 raise Exception ('Error accessing url %s . HTTP status code %d, %s' %(url,resp.status_code,resp.reason) )
@@ -96,13 +97,12 @@ class APSystemsHTTP:
         finally:
             resp.close()
         return resp.text, resp
-#
-# hide async from queries
-#
-    def reqHTTPData(self, url, data):
+
+    async def reqHTTPData(self, url, data):
         if self.AIO:
-            # encapsulate async task
-            return asyncio.run(self.asyncHTTP(url, data) )
+            response = None
+            response = await self.asyncHTTP(url, data)
+            return response
         else:
             return self.syncHTTP(url, data)
 
@@ -113,7 +113,8 @@ class APSystemsHTTP:
 # interface async/sync
     async def async_query_ecu(self):
         self.AIO=True
-        return self.do_query_ecu()
+        data = await self.do_query_ecu()
+        return data
 
     def sync_query_ecu(self):
         self.AIO=False
@@ -122,7 +123,7 @@ class APSystemsHTTP:
 #
 # process data
 #
-    def do_query_ecu(self):
+    async def do_query_ecu(self):
 
         self.grid = {}
         self.ts=time.time() #epoch
@@ -130,14 +131,14 @@ class APSystemsHTTP:
 
         #get ecu basics (like ecu_id). Only after startup
         if self.queried_static_info == False or self.ecu_id is None: #first query
-            self.getBasicStats()
+            await self.getBasicStats()
 
         #get 5 minute updates
-        self.getDailyStats()
+        await self.getDailyStats()
 
         #get weekly stats (once per day)
         if not self.ecu_last_query_date == self.ts_ymd:
-            self.getWeeklyStats()
+            await self.getWeeklyStats()
 
         #build response
         self.grid['timestamp'] = self.timestamp
@@ -161,9 +162,9 @@ class APSystemsHTTP:
 #
 # get static data (queried at startup)
 #
-    def getBasicStats(self):
+    async def getBasicStats(self):
         #get ecu_id (via wlan page)
-        response , resp = self.reqHTTPData(self.url_wlan, '')
+        response , resp = await self.reqHTTPData(self.url_wlan, '')
         soup = BeautifulSoup(response, features="html.parser")
         TAG = soup.findAll('input',attrs={'name':'SSID'})
         if TAG is None or len(TAG) == 0:
@@ -177,10 +178,10 @@ class APSystemsHTTP:
 #
 # get data for the day
 #
-    def getDailyStats(self):
+    async def getDailyStats(self):
         #get daily production from webAPI
         postdata='date=' + self.ts_ymd #query today. resp=headers, response=content
-        response , resp = self.reqHTTPData(self.url_old_power_graph, postdata)
+        response , resp = await self.reqHTTPData(self.url_old_power_graph, postdata)
 
         #parse page result
         rdict=json.loads(response) #convert response to dictionary
@@ -205,16 +206,16 @@ class APSystemsHTTP:
             self.today_energy = float(rdict['today_energy'])
         
         #scrape inverter data from internal webpage
-        response , resp = self.reqHTTPData(self.url_realtimedata, '')
+        response , resp = await self.reqHTTPData(self.url_realtimedata, '')
         self.parseInverterTable(response,'table table-condensed table-bordered')
 
 #
 # get the week stats
 #
-    def getWeeklyStats(self):
+    async def getWeeklyStats(self):
         #get daily production from webAPI
         postdata='period=weekly'
-        response , resp = self.reqHTTPData(self.url_old_energy_graph, postdata)
+        response , resp = await self.reqHTTPData(self.url_old_energy_graph, postdata)
         self.page = response
         rdict=json.loads(response)
         energy_list= [energy['energy'] for energy in rdict['energy']]

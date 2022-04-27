@@ -17,7 +17,7 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-
+_LOGGER.setLevel(logging.DEBUG)
 from .const import DOMAIN
 
 PLATFORMS = [ "sensor", "binary_sensor" ]
@@ -54,7 +54,7 @@ class ECUR():
 
         return self.cached_data
 
-    def update(self):
+    async def update(self):
         data = {}
 
         # if we aren't actively quering data, pull data form the cache
@@ -71,7 +71,7 @@ class ECUR():
 
         _LOGGER.debug("Querying ECU")
         try:
-            data = self.ecu.query_ecu()
+            data = await self.ecu.query_ecu()
             _LOGGER.debug("Got data from ECU")
 
             # we got good results, so we store it and set flags about our
