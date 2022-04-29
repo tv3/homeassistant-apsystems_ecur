@@ -13,7 +13,7 @@ This couldn't have been done without the hardwork of @checking12 and @HAEdwin on
 You own an APSystems ECU-R or ECU-C (not ECU-B) and any combination of YC600, YC1000 or QS1/QS1A inverter.
 ## Release notes
 
-### v1.1.3
+### v1.1.2.1
 HTTP version combined with TCP for getting additional info
 
 TODO: many things... 
