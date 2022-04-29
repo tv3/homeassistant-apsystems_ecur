@@ -1,19 +1,24 @@
-# Home-Assistant APSystems ECU-R and ECU-B Integration
-This is a custom component for [Home-Assistant](http://home-assistant.io) that adds support for the [APsystems](http://www.apsystems.com) ECU-R and ECU-B solar Energy Communication Unit. With this component you are able to monitor your PV installation (inverters) in detail.
+# Home-Assistant APSystems ECU-R and ECU-C (?) Integration
+This is a custom component for [Home-Assistant](http://home-assistant.io) that adds support for the [APsystems](http://www.apsystems.com) ECU-R and ECU-C (not B!) solar Energy Communication Unit. With this component you are able to monitor your PV installation (inverters) in detail.
 
+**This version is specific for the ECU with ECU-R-PRO firmware as it has an internal website that can be queried. This has proven to be a stable way of getting data from the ECU.
+**
 
 ## Background & acknowledgement
-This integration queries the local ECU-R and ECU-B every 1 minute for new data. This was done without a public API, and by listening to and interpreting the protocol the APSystems ECU phone app (ECUapp) uses when setting up the PV array.
+This integration queries the local ECU every 5 minutes for new data. This was done without a public API, and by listening to and interpreting the protocol the APSystems ECU phone app (ECUapp) uses when setting up the PV array.
 
 This couldn't have been done without the hardwork of @checking12 and @HAEdwin on the home assistant forum, and all the other people from this forum (https://gathering.tweakers.net/forum/list_messages/2032302/1)
 
 ## Prerequisites
-You own an APSystems ECU-R or ECU-B and any combination of YC600, YC1000 or QS1/QS1A inverter.
-This component only works if the ECU-R or ECU-B is attached to your network by Wifi. To enable and configure WiFi on the ECU, use the ECUapp (downloadable via Appstore or Google Play) and temporarily enable the ECU's accesspoint by pressing the button on the side of the ECU. Then connect your phone's WiFi to the ECU's accesspoint to enable the ECUapp to connect and configure the ECU.
-Although there's no need to also attach the ECU-R by ethernet cable (for the ECU-B LAN ports are disabled), you are free to do so if you like.
-
+You own an APSystems ECU-R or ECU-C (not ECU-B) and any combination of YC600, YC1000 or QS1/QS1A inverter.
 ## Release notes
 
+### v1.1.3
+HTTP version combined with TCP for getting additional info
+
+TODO: many things... 
+- add inverter model details from TCP query to HTTP query output
+- update TCP socket IO
 
 ### v1.1.2
 Make ECU-C devices behave like ECU_R_PRO devices and close the socket down between each query.  Add support for new ds3 inverter type 704
@@ -72,8 +77,8 @@ The component supports getting data from the array as a whole as well as each in
 These sensors will show up under an `ECU [ID]` device, where [ID] is the unique ID of your ECU
 
 * sensor.ecu_current_power - total amount of power (in W) being generated right now
-* sensor.ecu_today_energy - total amount of energy (in kWh) generated today now
-* sensor.ecu_lifetime_energy - THis sensor is NOT available with the http query function. Use ecu_today_energy! (total amount of energy (in kWh) generated from the lifetime of the array)
+* sensor.ecu_today_energy - total amount of energy (in kWh) generated today now. Use this sensor to populate the enrgy dashboard!!
+* sensor.ecu_lifetime_energy - DO NOT USE. This sensor is NOT available with the http query function. Use ecu_today_energy! (total amount of energy (in kWh) generated from the lifetime of the array). It is only updated every day.
 
 ### Inverter Level Sensors
 
