@@ -31,13 +31,13 @@ class APSystemsECUR:
         self.url_realtimedata= self.url_prefix + "/realtimedata"
         self.url_wlan = self.url_prefix + "/management/wlan" 
         self.grid = {}
-        self.ecu_last_query_date  = 0
         self.inverters = {}
-        self.queried_static_info = False
-        self.timestamp = 0
-        self.ts = None
-        self.ts_ymd = None
-        self.ecu_id = None #static
+        self.timestamp = "" #string formatted date
+        self.ts = None #time object
+        self.ts_ymd = "" #string formatted date
+        self.ecu_last_query_date  = "1970-01-01" #string formatted date
+        self.ecu_id = "" #static. unique ECU id
+        
         self.qty_of_inverters = 0  #static
         self.inverter_qty_online = 0
         self.lifetime_energy = 0 #kwh
@@ -81,8 +81,8 @@ class APSystemsECUR:
 
         self.qty_of_online_inverters = 0
         self.last_update = None
-        self.firmware = None
-        self.timezone = None
+        self.firmware = "" 
+        self.timezone = ""
 
         self.vsl = 0
         self.tsl = 0
@@ -234,12 +234,16 @@ class APSystemsECUR:
     async def http_query_ecu(self):
 
         self.grid = {}
-        self.ts=time.time() #epoch
+        self.ts=time.time() #epoch is sec
         self.ts_ymd=time.strftime('%Y-%m-%d',time.localtime(self.ts))
 
-        #get ecu basics (like ecu_id). Only after startup
-        if self.queried_static_info == False or self.ecu_id is None: #first query
+        #get ecu basics (like ecu_id). @startup and each day
+        if  not self.ecu_last_query_date == self.ts_ymd:
+            #get all basic data like converter/firmware etc via TCP
+            result = await self.async_query_ecu()
+            #HTTP version. Can collect only ecu_id for now. When possible should replace TCP
             await self.getBasicStats()
+            _LOGGER.info('Queried basic info on %s: firmware=%s ecu_id=%s' %(self.ts_ymd, self.firmware, self.ecu_id) )
 
         #get 5 minute updates
         await self.getDailyStats()
@@ -255,6 +259,7 @@ class APSystemsECUR:
         self.grid['inverters'] = self.inverters
 
         self.grid["ecu_id"] = self.ecu_id
+        self.grid["firmware"] = self.firmware
         self.grid["today_energy"] = self.today_energy
         self.grid["peak_power"] = self.peak_power
         self.grid["median_power"] = self.median_power
@@ -264,13 +269,13 @@ class APSystemsECUR:
         self.grid["week_mean_power"] = self.week_mean_power
         self.grid["lifetime_energy"] = self.lifetime_energy
         self.grid["current_power"] = self.current_power
-
+ 
         return self.grid
 
     async def getBasicStats(self):
         #get ecu_id (via wlan page)
         response , resp= await self.getHTTPData(self.url_wlan, '')
-        soup = BeautifulSoup(response)
+        soup = BeautifulSoup(response,features="html.parser")
         TAG = soup.findAll('input',attrs={'name':'SSID'})
         if TAG is None or len(TAG) == 0:
             _LOGGER.warning(f"Failed to get basic data from query on {self.url_wlan}")
@@ -278,7 +283,6 @@ class APSystemsECUR:
             VALUE_list = TAG[0].attrs['value'].split('_')
             if VALUE_list[0] == 'ECU':
                 self.ecu_id = TAG[0].attrs['value'].split('_')[-1]
-                self.queried_static_info = True
 
     async def getDailyStats(self):
         #get daily production from webAPI
